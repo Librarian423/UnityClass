@@ -22,6 +22,8 @@ public class Enemy : LivingEntity
     public float timeBetAttack = 0.5f; // 공격 간격
     private float lastAttackTime; // 마지막 공격 시점
 
+    public float range = 10f;
+
     // 추적할 대상이 존재하는지 알려주는 프로퍼티
     private bool hasTarget
     {
@@ -40,6 +42,14 @@ public class Enemy : LivingEntity
         //enemyAnimator = GetComponent<Animator>();
         //enemyAudioPlayer = GetComponent<AudioSource>();
         //enemyRenderer = GetComponentInChildren<Renderer>();
+    }
+
+    public void Setup(EnemyData data)
+    {
+        startingHealth = data.health;
+        damage = data.damage;
+        pathFinder.speed = data.speed;
+        enemyRenderer.material.color = data.color;
     }
 
     // 적 AI의 초기 스펙을 결정하는 셋업 메서드
@@ -63,6 +73,17 @@ public class Enemy : LivingEntity
         enemyAnimator.SetBool("HasTarget", hasTarget);
     }
 
+    //private void OnDrawGizmosSelected()
+    //{
+    //    if (!Application.isPlaying)
+    //    {
+    //        return;
+    //    }
+    //    //var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+    //    Gizmos.color = Color.red;
+    //    Gizmos.DrawWireSphere(transform.position, range);
+    //}
+
     // 주기적으로 추적할 대상의 위치를 찾아 경로를 갱신
     private IEnumerator UpdatePath()
     {
@@ -78,7 +99,7 @@ public class Enemy : LivingEntity
             {
                 pathFinder.isStopped = true;
 
-                var colliders = Physics.OverlapSphere(transform.position, 20f, whatIsTarget);
+                var colliders = Physics.OverlapSphere(transform.position, range, whatIsTarget);
                 foreach (var collider in colliders)
                 {
                     var entity = collider.GetComponent<LivingEntity>();

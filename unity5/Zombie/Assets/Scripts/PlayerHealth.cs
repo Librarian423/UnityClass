@@ -26,14 +26,6 @@ public class PlayerHealth : LivingEntity
 
     }
 
-    //private void Update()
-    //{
-    //    if (Input.GetKeyDown(KeyCode.Space))
-    //    {
-    //        OnDamage(10f, transform.position, transform.forward);
-    //    }
-    //}
-
     protected override void OnEnable()
     {
         // LivingEntity의 OnEnable() 실행 (상태 초기화)

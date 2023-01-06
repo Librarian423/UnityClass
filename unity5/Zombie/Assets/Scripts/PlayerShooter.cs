@@ -45,7 +45,7 @@ public class PlayerShooter : MonoBehaviour
                 playerAnimator.SetTrigger("Reload");
             }
         }
-
+        UpdateUI();
     }
 
     // 탄약 UI 갱신
