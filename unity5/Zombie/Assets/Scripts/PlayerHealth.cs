@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.UI; // UI 관련 코드
+using Photon.Pun;
 
 // 플레이어 캐릭터의 생명체로서의 동작을 담당
 public class PlayerHealth : LivingEntity
@@ -23,7 +24,6 @@ public class PlayerHealth : LivingEntity
         playerAnimator = GetComponent<Animator>();
         playerMovement = GetComponent<PlayerMovement>();
         playerShooter = GetComponent<PlayerShooter>();
-
     }
 
     protected override void OnEnable()
@@ -36,9 +36,12 @@ public class PlayerHealth : LivingEntity
 
         playerMovement.enabled = true;
         playerShooter.enabled = true;
+
+        
     }
 
     // 체력 회복
+    [PunRPC]
     public override void RestoreHealth(float newHealth)
     {
         // LivingEntity의 RestoreHealth() 실행 (체력 증가)
@@ -47,12 +50,11 @@ public class PlayerHealth : LivingEntity
     }
 
     // 데미지 처리
+    [PunRPC]
     public override void OnDamage(float damage, Vector3 hitPoint, Vector3 hitDirection)
     {
         if (dead)
-        {
             return;
-        }
 
         playerAudioPlayer.PlayOneShot(hitClip);
 
@@ -73,6 +75,8 @@ public class PlayerHealth : LivingEntity
 
         playerMovement.enabled = false;
         playerShooter.enabled = false;
+
+        Invoke("Respawn", 5f);
     }
 
     private void OnTriggerEnter(Collider other)
@@ -80,15 +84,30 @@ public class PlayerHealth : LivingEntity
         if (dead)
         {
             return;
+
         }
 
-        // 아이템과 충돌한 경우 해당 아이템을 사용하는 처리
         IItem item = other.GetComponent<IItem>();
-
-        if (item != null) 
+        if (item != null)
         {
-            item.Use(gameObject);
+            if (PhotonNetwork.IsMasterClient)
+            {
+                item.Use(gameObject);
+            } 
             playerAudioPlayer.PlayOneShot(itemPickupClip);
         }
+    }
+
+    public void Respawn()
+    {
+        if (photonView.IsMine)
+        {
+            var pos = Random.insideUnitSphere * 5f;
+            pos.y = 0f;
+            transform.position = pos;
+        }
+
+        gameObject.SetActive(false);
+        gameObject.SetActive(true);
     }
 }

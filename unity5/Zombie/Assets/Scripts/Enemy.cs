@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.AI; // AI, 내비게이션 시스템 관련 코드를 가져오기
+using Photon.Pun;
 
 // 적 AI를 구현한다
 public class Enemy : LivingEntity
@@ -46,13 +47,12 @@ public class Enemy : LivingEntity
 
     public void Setup(EnemyData data)
     {
-        startingHealth = data.health;
-        damage = data.damage;
-        pathFinder.speed = data.speed;
-        enemyRenderer.material.color = data.color;
+        
+        Setup(data.health, data.damage, data.speed, data.color);
     }
 
     // 적 AI의 초기 스펙을 결정하는 셋업 메서드
+    [PunRPC]
     public void Setup(float newHealth, float newDamage, float newSpeed, Color skinColor)
     {
         startingHealth = newHealth;
@@ -63,26 +63,23 @@ public class Enemy : LivingEntity
 
     private void Start()
     {
+        if (!PhotonNetwork.IsMasterClient)
+        {
+            return;
+        }
         // 게임 오브젝트 활성화와 동시에 AI의 추적 루틴 시작
         StartCoroutine(UpdatePath());
     }
 
     private void Update()
     {
+        if (!PhotonNetwork.IsMasterClient)
+        {
+            return;
+        }
         // 추적 대상의 존재 여부에 따라 다른 애니메이션을 재생
         enemyAnimator.SetBool("HasTarget", hasTarget);
     }
-
-    //private void OnDrawGizmosSelected()
-    //{
-    //    if (!Application.isPlaying)
-    //    {
-    //        return;
-    //    }
-    //    //var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-    //    Gizmos.color = Color.red;
-    //    Gizmos.DrawWireSphere(transform.position, range);
-    //}
 
     // 주기적으로 추적할 대상의 위치를 찾아 경로를 갱신
     private IEnumerator UpdatePath()
@@ -117,6 +114,7 @@ public class Enemy : LivingEntity
     }
 
     // 데미지를 입었을때 실행할 처리
+    [PunRPC]
     public override void OnDamage(float damage, Vector3 hitPoint, Vector3 hitNormal)
     {
         if (dead)
@@ -157,6 +155,11 @@ public class Enemy : LivingEntity
 
     private void OnTriggerStay(Collider other)
     {
+        if (!PhotonNetwork.IsMasterClient)
+        {
+            return;
+        }
+
         if (dead || Time.time - lastAttackTime < timeBetAttack) 
         {
             return;

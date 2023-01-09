@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using Photon.Pun;
 
 // 체력을 회복하는 아이템
 public class HealthPack : MonoBehaviour, IItem
@@ -18,6 +19,6 @@ public class HealthPack : MonoBehaviour, IItem
         }
 
         // 사용되었으므로, 자신을 파괴
-        Destroy(gameObject);
+        PhotonNetwork.Destroy(gameObject);
     }
 }

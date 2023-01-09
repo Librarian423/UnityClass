@@ -1,8 +1,10 @@
 ﻿using UnityEngine;
 using UnityEngine.AI; // 내비메쉬 관련 코드
+using Photon.Pun;
+using System.Collections;
 
 // 주기적으로 아이템을 플레이어 근처에 생성하는 스크립트
-public class ItemSpawner : MonoBehaviour
+public class ItemSpawner : MonoBehaviourPun
 {
     public GameObject[] items; // 생성할 아이템들
     public Transform playerTransform; // 플레이어의 트랜스폼
@@ -25,6 +27,16 @@ public class ItemSpawner : MonoBehaviour
     // 주기적으로 아이템 생성 처리 실행
     private void Update()
     {
+        if (!PhotonNetwork.IsMasterClient)
+        {
+            return;
+        }
+
+        if (playerTransform == null)
+        {
+            playerTransform = GameObject.FindWithTag("Player").transform;
+        }
+
         // 현재 시점이 마지막 생성 시점에서 생성 주기 이상 지남
         // && 플레이어 캐릭터가 존재함
         if (Time.time >= lastSpawnTime + timeBetSpawn && playerTransform != null)
@@ -39,7 +51,8 @@ public class ItemSpawner : MonoBehaviour
     }
 
     // 실제 아이템 생성 처리
-    private void Spawn() {
+    private void Spawn()
+    {
         // 플레이어 근처에서 내비메시 위의 랜덤 위치 가져오기
         Vector3 spawnPosition =
             GetRandomPointOnNavMesh(playerTransform.position, maxDistance);
@@ -48,15 +61,26 @@ public class ItemSpawner : MonoBehaviour
 
         // 아이템 중 하나를 무작위로 골라 랜덤 위치에 생성
         GameObject selectedItem = items[Random.Range(0, items.Length)];
-        GameObject item = Instantiate(selectedItem, spawnPosition, Quaternion.identity);
+        GameObject item = PhotonNetwork.Instantiate(selectedItem.name, spawnPosition, Quaternion.identity);
 
         // 생성된 아이템을 5초 뒤에 파괴
-        Destroy(item, 5f);
+        CoDestroyDelay(item, 5f);
+        //Destroy(item, 5f);
+    }
+
+    IEnumerator CoDestroyDelay(GameObject item, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (item != null)
+        {
+            PhotonNetwork.Destroy(item);
+        }
     }
 
     // 내비메시 위의 랜덤한 위치를 반환하는 메서드
     // center를 중심으로 distance 반경 안에서 랜덤한 위치를 찾는다
-    private Vector3 GetRandomPointOnNavMesh(Vector3 center, float distance) {
+    private Vector3 GetRandomPointOnNavMesh(Vector3 center, float distance)
+    {
         // center를 중심으로 반지름이 maxDistance인 구 안에서의 랜덤한 위치 하나를 저장
         // Random.insideUnitSphere는 반지름이 1인 구 안에서의 랜덤한 한 점을 반환하는 프로퍼티
         Vector3 randomPos = Random.insideUnitSphere * distance + center;

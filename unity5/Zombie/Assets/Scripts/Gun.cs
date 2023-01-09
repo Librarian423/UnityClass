@@ -1,8 +1,9 @@
 ﻿using System.Collections;
 using UnityEngine;
+using Photon.Pun;
 
 // 총을 구현한다
-public class Gun : MonoBehaviour
+public class Gun : MonoBehaviourPun, IPunObservable
 {
     // 총의 상태를 표현하는데 사용할 타입을 선언한다
     public enum State
@@ -63,14 +64,14 @@ public class Gun : MonoBehaviour
 
     }
 
-    // 실제 발사 처리
-    private void Shot()
+    [PunRPC]
+    private void ShotOnServer()
     {
         RaycastHit hit;
         var hitpos = Vector3.zero;
         var ray = new Ray(fireTransform.position, fireTransform.forward);
 
-        if (Physics.Raycast(ray, out hit, gunData.fireDistance)) 
+        if (Physics.Raycast(ray, out hit, gunData.fireDistance))
         {
             hitpos = hit.point;
             var target = hit.collider.GetComponent<IDamageable>();
@@ -78,14 +79,26 @@ public class Gun : MonoBehaviour
             {
                 target.OnDamage(gunData.damage, hitpos, hit.normal);
             }
-            
+
         }
         else
         {
             hitpos = fireTransform.position + fireTransform.forward * gunData.fireDistance;
         }
 
+        photonView.RPC("ShotEffectOnClient", RpcTarget.All, hitpos);
+    }
+
+    [PunRPC]
+    private void ShotEffectOnClient(Vector3 hitpos)
+    {
         StartCoroutine(ShotEffect(hitpos));
+    }
+
+    // 실제 발사 처리
+    private void Shot()
+    {
+        photonView.RPC("ShotOnServer", RpcTarget.MasterClient);
 
         magAmmo--;
         if (magAmmo <= 0) 
@@ -154,5 +167,29 @@ public class Gun : MonoBehaviour
         state = State.Ready;
 
 
+    }
+
+    public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
+    {
+        if (stream.IsWriting)
+        {
+            stream.SendNext(ammoRemain);
+            stream.SendNext(magAmmo);
+            stream.SendNext(state);
+        }
+        else
+        {
+            ammoRemain = (int)stream.ReceiveNext();
+            magAmmo = (int)stream.ReceiveNext();
+            state = (State)stream.ReceiveNext();
+           
+        }
+    
+    }
+
+    [PunRPC]
+    public void AddAmmo(int ammo)
+    {
+        ammoRemain += ammo;
     }
 }

@@ -1,9 +1,10 @@
 ﻿using System;
 using UnityEngine;
+using Photon.Pun;
 
 // 생명체로서 동작할 게임 오브젝트들을 위한 뼈대를 제공
 // 체력, 데미지 받아들이기, 사망 기능, 사망 이벤트를 제공
-public class LivingEntity : MonoBehaviour, IDamageable
+public class LivingEntity : MonoBehaviourPun, IDamageable
 {
     public float startingHealth = 100f; // 시작 체력
     public float health { get; protected set; } // 현재 체력
@@ -19,11 +20,25 @@ public class LivingEntity : MonoBehaviour, IDamageable
         health = startingHealth;
     }
 
+    [PunRPC]
+    public void ApplyUpdatedHealth(float newHp, bool newDead)
+    {
+        health = newHp;
+        dead = newDead;
+    }
+
     // 데미지를 입는 기능
+    [PunRPC]
     public virtual void OnDamage(float damage, Vector3 hitPoint, Vector3 hitNormal)
     {
-        // 데미지만큼 체력 감소
-        health -= damage;
+        if (PhotonNetwork.IsMasterClient)
+        {
+            // 데미지만큼 체력 감소
+            health -= damage;
+
+            photonView.RPC("ApplyUpdatedHealth", RpcTarget.Others, health, dead);
+            photonView.RPC("OnDamage", RpcTarget.Others, damage, hitPoint, hitNormal);
+        }
 
         // 체력이 0 이하 && 아직 죽지 않았다면 사망 처리 실행
         if (health <= 0 && !dead)
@@ -33,6 +48,7 @@ public class LivingEntity : MonoBehaviour, IDamageable
     }
 
     // 체력을 회복하는 기능
+    [PunRPC]
     public virtual void RestoreHealth(float newHealth)
     {
         if (dead)
@@ -41,8 +57,14 @@ public class LivingEntity : MonoBehaviour, IDamageable
             return;
         }
 
-        // 체력 추가
-        health += newHealth;
+        if (PhotonNetwork.IsMasterClient)
+        {
+            // 체력 추가
+            health += newHealth;
+
+            photonView.RPC("ApplyUpdatedHealth", RpcTarget.Others, health, dead);
+            photonView.RPC("RestoreHealth", RpcTarget.Others, newHealth);
+        }
     }
 
     // 사망 처리
