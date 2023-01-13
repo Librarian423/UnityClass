@@ -7,13 +7,18 @@ public class WindowManager : MonoBehaviour
     public static WindowManager instance;
 
     public GenericWindow[] windows;
-    public int currentWndId;
+    public Windows currentWndId;
 
-    public int defaultWndId;
+    public Windows defaultWndId;
 
     public GenericWindow GetWindow(int id)
     {
         return windows[id];
+    }
+
+    public GenericWindow GetWindow(Windows id)
+    {
+        return windows[(int)id];
     }
 
     private void Awake()
@@ -25,6 +30,11 @@ public class WindowManager : MonoBehaviour
     private void Start()
     {
         Open(defaultWndId);
+    }
+
+    private void ToggleWindow(Windows id)
+    {
+        ToggleWindow((int)id);
     }
 
     private void ToggleWindow(int id)
@@ -55,7 +65,7 @@ public class WindowManager : MonoBehaviour
             return null;
         }
 
-        currentWndId = id;
+        currentWndId = (Windows)id;
         ToggleWindow(currentWndId);
 
         return GetWindow(currentWndId);

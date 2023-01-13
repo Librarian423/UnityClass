@@ -4,4 +4,5 @@ public enum Windows
 	Start,
 	KeyBoard,
 	GameOver,
+	Difficulty,
 }

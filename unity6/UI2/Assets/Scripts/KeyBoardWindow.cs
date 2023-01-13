@@ -12,19 +12,19 @@ public class KeyBoardWindow : GenericWindow
     public TextMeshProUGUI inputs;
     public int maxStringLength = 6;
 
-    private string underBar = "_";
-    private string stringField;
+    private const string underBar = "_";
+    private string stringField = string.Empty;
 
     private bool isBlink = true;
 
     public float blinkTime = 1.5f;
     public float lastTime = 0f;
 
-    private void Start()
-    {
-        stringField = string.Empty;
-        Open();
-    }
+    //private void Start()
+    //{        
+    //    stringField = string.Empty;
+    //    Open();
+    //}
 
     public override void Open()
     {
@@ -51,21 +51,12 @@ public class KeyBoardWindow : GenericWindow
 
     IEnumerator Blinking()
     {
-        Debug.Log("start co");
-        //inputs.text = stringField + underBar;
-        //yield return new WaitForSeconds(.5f);
-        
-        ////yield return new WaitForSeconds(.5f);
-        //inputs.text = stringField;
-
         while (isBlink)
         {
+            inputs.text = (inputs.text.Length <= maxStringLength) ? stringField + underBar : stringField;
             yield return new WaitForSeconds(.5f);
-            inputs.text = stringField + underBar;
-           
-            yield return new WaitForSeconds(.5f);
-            inputs.text = stringField;
 
+            inputs.text = stringField;
             yield return new WaitForSeconds(.5f);
         }
 
@@ -83,6 +74,7 @@ public class KeyBoardWindow : GenericWindow
 
     public void OnCancel()
     {
+        inputs.text = string.Empty;
         stringField = string.Empty;
         OnPrevWindow();
     }
@@ -98,6 +90,7 @@ public class KeyBoardWindow : GenericWindow
 
     public void OnAccept()
     {
+        inputs.text = string.Empty;
         stringField = string.Empty;
         OnNextWindow();
         
